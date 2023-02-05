@@ -1,0 +1,18 @@
+mode: set
+my/redditclone/pkg/user/repo.go:18.53,20.2 1 1
+my/redditclone/pkg/user/repo.go:21.79,26.16 3 1
+my/redditclone/pkg/user/repo.go:29.2,29.27 1 1
+my/redditclone/pkg/user/repo.go:33.2,33.18 1 1
+my/redditclone/pkg/user/repo.go:26.16,28.3 1 1
+my/redditclone/pkg/user/repo.go:29.27,31.3 1 1
+my/redditclone/pkg/user/repo.go:35.68,40.16 3 1
+my/redditclone/pkg/user/repo.go:44.2,49.16 2 1
+my/redditclone/pkg/user/repo.go:52.2,52.12 1 1
+my/redditclone/pkg/user/repo.go:40.16,42.3 1 1
+my/redditclone/pkg/user/repo.go:49.16,51.3 1 1
+my/redditclone/pkg/user/repo_mock.go:25.61,29.2 3 0
+my/redditclone/pkg/user/repo_mock.go:32.59,34.2 1 0
+my/redditclone/pkg/user/repo_mock.go:37.58,42.2 4 0
+my/redditclone/pkg/user/repo_mock.go:45.83,48.2 2 0
+my/redditclone/pkg/user/repo_mock.go:51.69,57.2 5 0
+my/redditclone/pkg/user/repo_mock.go:60.85,63.2 2 0

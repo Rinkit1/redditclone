@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<!-- saved from url=(0077)file:///C:/Users/bychk/AppData/Local/Temp/cover3481073137/coverage.html#file5 -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		
+		<title>handlers: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">gitlab.com/vk-go/lectures-2022-2/06_databases/99_hw/redditclone/pkg/handlers/comment.go (77.3%)</option>
+				
+				<option value="file1">gitlab.com/vk-go/lectures-2022-2/06_databases/99_hw/redditclone/pkg/handlers/post.go (76.4%)</option>
+				
+				<option value="file2">gitlab.com/vk-go/lectures-2022-2/06_databases/99_hw/redditclone/pkg/handlers/post_mock.go (91.1%)</option>
+				
+				<option value="file3">gitlab.com/vk-go/lectures-2022-2/06_databases/99_hw/redditclone/pkg/handlers/user.go (82.4%)</option>
+				
+				<option value="file4">gitlab.com/vk-go/lectures-2022-2/06_databases/99_hw/redditclone/pkg/handlers/user_mock.go (80.0%)</option>
+				
+				<option value="file5">gitlab.com/vk-go/lectures-2022-2/06_databases/99_hw/redditclone/pkg/handlers/vote.go (76.5%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none;">package handlers
+
+import (
+        "encoding/json"
+        "github.com/gorilla/mux"
+        "gitlab.com/vk-go/lectures-2022-2/06_databases/99_hw/redditclone/pkg/session"
+        "io/ioutil"
+        "log"
+
+        "net/http"
+)
+
+type CommentHandler struct {
+        PostRepo PostsRepo
+        Logger   *log.Logger
+}
+
+type CommentInfo struct {
+        Comment string `json:"comment"`
+}
+
+func (h *CommentHandler) Create(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        h.Logger.Printf("successfully entry commentHandler.Create: [%s] %s\n",
+                r.Method, r.URL.Path)
+        vars := mux.Vars(r)
+        ID, login := session.SessionFromContext(r.Context())
+        body, err := ioutil.ReadAll(r.Body)
+        defer r.Body.Close()
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "can not read body")
+                return
+        }</span>
+        <span class="cov8" title="1">info := new(CommentInfo)
+        err = json.Unmarshal(body, &amp;info)
+        if err != nil </span><span class="cov8" title="1">{
+                SendMessage(w, http.StatusBadRequest, "incorrect params")
+                return
+        }</span>
+        <span class="cov8" title="1">post, err := h.PostRepo.AddComment(vars["id"], info.Comment, ID, login)
+        if err != nil </span><span class="cov8" title="1">{
+                SendMessage(w, http.StatusBadRequest, err.Error())
+                return
+        }</span>
+        <span class="cov8" title="1">data, err := json.Marshal(post)
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "JSON Marshal error")
+                return
+        }</span>
+        <span class="cov8" title="1">w.WriteHeader(http.StatusOK)
+        _, err = w.Write(data)
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "Write error")
+                return
+        }</span>
+        <span class="cov8" title="1">h.Logger.Printf("successfully exit commentHandler.Create\n")</span>
+}
+func (h *CommentHandler) Delete(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        h.Logger.Printf("successfully entry commentHandler.Delete: [%s] %s\n",
+                r.Method, r.URL.Path)
+        vars := mux.Vars(r)
+        ID, _ := session.SessionFromContext(r.Context())
+        findPost, err := h.PostRepo.DeleteComment(vars["postID"], vars["commentID"], ID)
+        if err != nil </span><span class="cov8" title="1">{
+                SendMessage(w, http.StatusBadRequest, err.Error())
+                return
+        }</span>
+        <span class="cov8" title="1">data, err := json.Marshal(findPost)
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "JSON Marshal error")
+                return
+        }</span>
+        <span class="cov8" title="1">w.WriteHeader(http.StatusOK)
+        _, err = w.Write(data)
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "Write error")
+                return
+        }</span>
+        <span class="cov8" title="1">h.Logger.Printf("successfully exit commentHandler.Delete\n")</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none;">package handlers
+
+import (
+        "encoding/json"
+        "fmt"
+        "github.com/gorilla/mux"
+        "gitlab.com/vk-go/lectures-2022-2/06_databases/99_hw/redditclone/pkg/post"
+        "gitlab.com/vk-go/lectures-2022-2/06_databases/99_hw/redditclone/pkg/session"
+        "io/ioutil"
+        "log"
+        "net/http"
+)
+
+type PostHandler struct {
+        PostRepo PostsRepo
+        Logger   *log.Logger
+}
+
+type PostsRepo interface {
+        GetAll() ([]*post.Post, error)
+        FindPostsInMongoDB(bson interface{}) (posts []*post.Post, err error)
+        AddPost(postJSON *post.Post, id, login string) error
+        OpenPost(id string) (*post.Post, error)
+        Vote(vote int, authorID string, postID string) (*post.Post, error)
+        UnVote(authorID string, postID string) (*post.Post, error)
+        Delete(postID string, authorID string) (err error)
+        Category(name string) ([]*post.Post, error)
+        User(name string) ([]*post.Post, error)
+        AddComment(postID, body, authorID, login string) (*post.Post, error)
+        DeleteComment(postID, commentID, authorID string) (*post.Post, error)
+}
+
+func (h *PostHandler) List(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        h.Logger.Printf("successfully entry postHandler.List: [%s]  %s\n",
+                r.Method, r.URL.Path)
+        elems, err := h.PostRepo.GetAll()
+        if err != nil </span><span class="cov8" title="1">{
+                SendMessage(w, http.StatusInternalServerError, err.Error())
+                return
+        }</span>
+        <span class="cov8" title="1">data, err := json.Marshal(elems)
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "JSON Marshal error")
+                return
+        }</span>
+        <span class="cov8" title="1">w.WriteHeader(http.StatusOK)
+        _, err = w.Write(data)
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "Write error")
+                return
+        }</span>
+        <span class="cov8" title="1">h.Logger.Printf("successfully exit postHandler.List\n")</span>
+}
+
+func (h *PostHandler) Create(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        h.Logger.Printf("successfully entry postHandler.Create: [%s] %s\n",
+                r.Method, r.URL.Path)
+        body, err := ioutil.ReadAll(r.Body)
+        defer r.Body.Close()
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "can not read body")
+                return
+        }</span>
+        <span class="cov8" title="1">postJSON := new(post.Post)
+        err = json.Unmarshal(body, postJSON)
+        if err != nil </span><span class="cov8" title="1">{
+                SendMessage(w, http.StatusBadRequest, "incorrect params")
+                return
+        }</span>
+        <span class="cov8" title="1">id, login := session.SessionFromContext(r.Context())
+        err = h.PostRepo.AddPost(postJSON, id, login)
+        if err != nil </span><span class="cov8" title="1">{
+                SendMessage(w, http.StatusInternalServerError, err.Error())
+                return
+        }</span>
+        <span class="cov8" title="1">data, err := json.Marshal(postJSON)
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "JSON Marshal error")
+                return
+        }</span>
+        <span class="cov8" title="1">w.WriteHeader(http.StatusOK)
+        _, err = w.Write(data)
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "Write error")
+                return
+        }</span>
+        <span class="cov8" title="1">h.Logger.Printf("successfully exit postHandler.Create\n")</span>
+}
+
+func (h *PostHandler) Open(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        h.Logger.Printf("successfully entry postHandler.Open: [%s] %s\n",
+                r.Method, r.URL.Path)
+        vars := mux.Vars(r)
+        post, err := h.PostRepo.OpenPost(vars["id"])
+        if err != nil </span><span class="cov8" title="1">{
+                SendMessage(w, http.StatusBadRequest, err.Error())
+                return
+        }</span>
+        <span class="cov8" title="1">data, err := json.Marshal(post)
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "JSON Marshal error")
+                return
+        }</span>
+        <span class="cov8" title="1">w.WriteHeader(http.StatusOK)
+        _, err = w.Write(data)
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "Write error")
+                return
+        }</span>
+        <span class="cov8" title="1">h.Logger.Printf("successfully exit postHandler.Open\n")</span>
+}
+
+func (h *PostHandler) Delete(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        h.Logger.Printf("successfully entry postHandler.Delete: [%s] %s\n",
+                r.Method, r.URL.Path)
+        vars := mux.Vars(r)
+        id, _ := session.SessionFromContext(r.Context())
+        err := h.PostRepo.Delete(vars["id"], id)
+        if err != nil </span><span class="cov8" title="1">{
+                SendMessage(w, http.StatusBadRequest, err.Error())
+                return
+        }</span>
+        <span class="cov8" title="1">SendMessage(w, http.StatusOK, "success")
+        h.Logger.Printf("successfully exit postHandler.Delete\n")</span>
+}
+
+func (h *PostHandler) Category(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        h.Logger.Printf("successfully entry postHandler.Category: [%s] %s\n",
+                r.Method, r.URL.Path)
+        vars := mux.Vars(r)
+        posts, err := h.PostRepo.Category(vars["category"])
+        if err != nil </span><span class="cov8" title="1">{
+                SendMessage(w, http.StatusInternalServerError, err.Error())
+                return
+        }</span>
+        <span class="cov8" title="1">data, err := json.Marshal(posts)
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "JSON Marshal error")
+                return
+        }</span>
+        <span class="cov8" title="1">w.WriteHeader(http.StatusOK)
+        _, err = w.Write(data)
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "Write error")
+                return
+        }</span>
+        <span class="cov8" title="1">h.Logger.Printf("successfully exit postHandler.Category\n")</span>
+}
+
+func (h *PostHandler) User(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        h.Logger.Printf("successfully entry postHandler.User: [%s] %s\n",
+                r.Method, r.URL.Path)
+        vars := mux.Vars(r)
+        posts, err := h.PostRepo.User(vars["user"])
+        if err != nil </span><span class="cov8" title="1">{
+                SendMessage(w, http.StatusInternalServerError, err.Error())
+                return
+        }</span>
+        <span class="cov8" title="1">data, err := json.Marshal(posts)
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "JSON Marshal error")
+                return
+        }</span>
+        <span class="cov8" title="1">w.WriteHeader(http.StatusOK)
+        _, err = w.Write(data)
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "Write error")
+                return
+        }</span>
+        <span class="cov8" title="1">h.Logger.Printf("successfully exit postHandler.User\n")</span>
+}
+
+func SendMessage(w http.ResponseWriter, status int, text string) <span class="cov8" title="1">{
+        w.WriteHeader(status)
+        resp, err1 := json.Marshal(map[string]interface{}{"message": text})
+        if err1 != nil </span><span class="cov0" title="0">{
+                fmt.Printf("JSON Marshal error")
+                return
+        }</span>
+        <span class="cov8" title="1">_, err := w.Write(resp)
+        if err != nil </span><span class="cov0" title="0">{
+                fmt.Printf("Write error")
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">// Code generated by MockGen. DO NOT EDIT.
+// Source: pkg/handlers/post.go
+
+// Package handlers is a generated GoMock package.
+package handlers
+
+import (
+        reflect "reflect"
+
+        gomock "github.com/golang/mock/gomock"
+        post "gitlab.com/vk-go/lectures-2022-2/06_databases/99_hw/redditclone/pkg/post"
+)
+
+// MockPostsRepo is a mock of PostsRepo interface.
+type MockPostsRepo struct {
+        ctrl     *gomock.Controller
+        recorder *MockPostsRepoMockRecorder
+}
+
+// MockPostsRepoMockRecorder is the mock recorder for MockPostsRepo.
+type MockPostsRepoMockRecorder struct {
+        mock *MockPostsRepo
+}
+
+// NewMockPostsRepo creates a new mock instance.
+func NewMockPostsRepo(ctrl *gomock.Controller) *MockPostsRepo <span class="cov8" title="1">{
+        mock := &amp;MockPostsRepo{ctrl: ctrl}
+        mock.recorder = &amp;MockPostsRepoMockRecorder{mock}
+        return mock
+}</span>
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockPostsRepo) EXPECT() *MockPostsRepoMockRecorder <span class="cov8" title="1">{
+        return m.recorder
+}</span>
+
+// AddComment mocks base method.
+func (m *MockPostsRepo) AddComment(postID, body, authorID, login string) (*post.Post, error) <span class="cov8" title="1">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "AddComment", postID, body, authorID, login)
+        ret0, _ := ret[0].(*post.Post)
+        ret1, _ := ret[1].(error)
+        return ret0, ret1
+}</span>
+
+// AddComment indicates an expected call of AddComment.
+func (mr *MockPostsRepoMockRecorder) AddComment(postID, body, authorID, login interface{}) *gomock.Call <span class="cov8" title="1">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddComment", reflect.TypeOf((*MockPostsRepo)(nil).AddComment), postID, body, authorID, login)
+}</span>
+
+// AddPost mocks base method.
+func (m *MockPostsRepo) AddPost(postJSON *post.Post, id, login string) error <span class="cov8" title="1">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "AddPost", postJSON, id, login)
+        ret0, _ := ret[0].(error)
+        return ret0
+}</span>
+
+// AddPost indicates an expected call of AddPost.
+func (mr *MockPostsRepoMockRecorder) AddPost(postJSON, id, login interface{}) *gomock.Call <span class="cov8" title="1">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPost", reflect.TypeOf((*MockPostsRepo)(nil).AddPost), postJSON, id, login)
+}</span>
+
+// Category mocks base method.
+func (m *MockPostsRepo) Category(name string) ([]*post.Post, error) <span class="cov8" title="1">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "Category", name)
+        ret0, _ := ret[0].([]*post.Post)
+        ret1, _ := ret[1].(error)
+        return ret0, ret1
+}</span>
+
+// Category indicates an expected call of Category.
+func (mr *MockPostsRepoMockRecorder) Category(name interface{}) *gomock.Call <span class="cov8" title="1">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Category", reflect.TypeOf((*MockPostsRepo)(nil).Category), name)
+}</span>
+
+// Delete mocks base method.
+func (m *MockPostsRepo) Delete(postID, authorID string) error <span class="cov8" title="1">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "Delete", postID, authorID)
+        ret0, _ := ret[0].(error)
+        return ret0
+}</span>
+
+// Delete indicates an expected call of Delete.
+func (mr *MockPostsRepoMockRecorder) Delete(postID, authorID interface{}) *gomock.Call <span class="cov8" title="1">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockPostsRepo)(nil).Delete), postID, authorID)
+}</span>
+
+// DeleteComment mocks base method.
+func (m *MockPostsRepo) DeleteComment(postID, commentID, authorID string) (*post.Post, error) <span class="cov8" title="1">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "DeleteComment", postID, commentID, authorID)
+        ret0, _ := ret[0].(*post.Post)
+        ret1, _ := ret[1].(error)
+        return ret0, ret1
+}</span>
+
+// DeleteComment indicates an expected call of DeleteComment.
+func (mr *MockPostsRepoMockRecorder) DeleteComment(postID, commentID, authorID interface{}) *gomock.Call <span class="cov8" title="1">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteComment", reflect.TypeOf((*MockPostsRepo)(nil).DeleteComment), postID, commentID, authorID)
+}</span>
+
+// FindPostsInMongoDB mocks base method.
+func (m *MockPostsRepo) FindPostsInMongoDB(bson interface{}) ([]*post.Post, error) <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "FindPostsInMongoDB", bson)
+        ret0, _ := ret[0].([]*post.Post)
+        ret1, _ := ret[1].(error)
+        return ret0, ret1
+}</span>
+
+// FindPostsInMongoDB indicates an expected call of FindPostsInMongoDB.
+func (mr *MockPostsRepoMockRecorder) FindPostsInMongoDB(bson interface{}) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindPostsInMongoDB", reflect.TypeOf((*MockPostsRepo)(nil).FindPostsInMongoDB), bson)
+}</span>
+
+// GetAll mocks base method.
+func (m *MockPostsRepo) GetAll() ([]*post.Post, error) <span class="cov8" title="1">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "GetAll")
+        ret0, _ := ret[0].([]*post.Post)
+        ret1, _ := ret[1].(error)
+        return ret0, ret1
+}</span>
+
+// GetAll indicates an expected call of GetAll.
+func (mr *MockPostsRepoMockRecorder) GetAll() *gomock.Call <span class="cov8" title="1">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockPostsRepo)(nil).GetAll))
+}</span>
+
+// OpenPost mocks base method.
+func (m *MockPostsRepo) OpenPost(id string) (*post.Post, error) <span class="cov8" title="1">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "OpenPost", id)
+        ret0, _ := ret[0].(*post.Post)
+        ret1, _ := ret[1].(error)
+        return ret0, ret1
+}</span>
+
+// OpenPost indicates an expected call of OpenPost.
+func (mr *MockPostsRepoMockRecorder) OpenPost(id interface{}) *gomock.Call <span class="cov8" title="1">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenPost", reflect.TypeOf((*MockPostsRepo)(nil).OpenPost), id)
+}</span>
+
+// UnVote mocks base method.
+func (m *MockPostsRepo) UnVote(authorID, postID string) (*post.Post, error) <span class="cov8" title="1">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "UnVote", authorID, postID)
+        ret0, _ := ret[0].(*post.Post)
+        ret1, _ := ret[1].(error)
+        return ret0, ret1
+}</span>
+
+// UnVote indicates an expected call of UnVote.
+func (mr *MockPostsRepoMockRecorder) UnVote(authorID, postID interface{}) *gomock.Call <span class="cov8" title="1">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnVote", reflect.TypeOf((*MockPostsRepo)(nil).UnVote), authorID, postID)
+}</span>
+
+// User mocks base method.
+func (m *MockPostsRepo) User(name string) ([]*post.Post, error) <span class="cov8" title="1">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "User", name)
+        ret0, _ := ret[0].([]*post.Post)
+        ret1, _ := ret[1].(error)
+        return ret0, ret1
+}</span>
+
+// User indicates an expected call of User.
+func (mr *MockPostsRepoMockRecorder) User(name interface{}) *gomock.Call <span class="cov8" title="1">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "User", reflect.TypeOf((*MockPostsRepo)(nil).User), name)
+}</span>
+
+// Vote mocks base method.
+func (m *MockPostsRepo) Vote(vote int, authorID, postID string) (*post.Post, error) <span class="cov8" title="1">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "Vote", vote, authorID, postID)
+        ret0, _ := ret[0].(*post.Post)
+        ret1, _ := ret[1].(error)
+        return ret0, ret1
+}</span>
+
+// Vote indicates an expected call of Vote.
+func (mr *MockPostsRepoMockRecorder) Vote(vote, authorID, postID interface{}) *gomock.Call <span class="cov8" title="1">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Vote", reflect.TypeOf((*MockPostsRepo)(nil).Vote), vote, authorID, postID)
+}</span>
+</pre>
+		
+		<pre class="file" id="file3" style="display: none;">package handlers
+
+import (
+        "encoding/json"
+        "gitlab.com/vk-go/lectures-2022-2/06_databases/99_hw/redditclone/pkg/user"
+        "io/ioutil"
+        "log"
+        "net/http"
+        "strconv"
+        "text/template"
+)
+
+type UserRepo interface {
+        Authorize(login, pass string) (*user.User, error)
+        AddUser(login, pass string) error
+}
+
+type SessManager interface {
+        Create(id, login string) (tokenString string, err error)
+        Check(inToken string) (userInfo map[string]interface{}, err error)
+}
+
+type UserHandler struct {
+        Tmpl     *template.Template
+        Logger   *log.Logger
+        UserRepo UserRepo
+        Sessions SessManager
+}
+type UserJSON struct {
+        Username string
+        Password string
+}
+
+var templateName = "index.html"
+
+func (h *UserHandler) Index(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        h.Logger.Printf("successfully entry userHandler.Index: [%s] %s\n",
+                r.Method, r.URL.Path)
+        err := h.Tmpl.ExecuteTemplate(w, templateName, nil)
+        if err != nil </span><span class="cov8" title="1">{
+                SendMessage(w, http.StatusInternalServerError, "template error")
+                return
+        }</span>
+        <span class="cov8" title="1">h.Logger.Printf("successfully exit userHandler.Index\n")</span>
+}
+func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        h.Logger.Printf("successfully entry userHandler.Login: [%s] %s\n",
+                r.Method, r.URL.Path)
+        body, err := ioutil.ReadAll(r.Body)
+        defer r.Body.Close()
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "can not read body")
+                return
+        }</span>
+        <span class="cov8" title="1">userJSON := new(UserJSON)
+        err = json.Unmarshal(body, &amp;userJSON)
+        if err != nil </span><span class="cov8" title="1">{
+                SendMessage(w, http.StatusBadRequest, "incorrect params")
+                return
+        }</span>
+        <span class="cov8" title="1">u, err := h.UserRepo.Authorize(userJSON.Username, userJSON.Password)
+        if err != nil </span><span class="cov8" title="1">{
+                SendMessage(w, http.StatusBadRequest, err.Error())
+                return
+        }</span>
+        <span class="cov8" title="1">token, err := h.Sessions.Create(strconv.Itoa(int(u.ID)), u.Login)
+        if err != nil </span><span class="cov8" title="1">{
+                SendMessage(w, http.StatusInternalServerError, err.Error())
+                return
+        }</span>
+        <span class="cov8" title="1">w.WriteHeader(http.StatusCreated)
+        data, err := json.Marshal(map[string]interface{}{"token": token})
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "JSON Marshal error")
+                return
+        }</span>
+        <span class="cov8" title="1">_, err = w.Write(data)
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "Write error")
+                return
+        }</span>
+        <span class="cov8" title="1">h.Logger.Printf("successfully exit userHandler.Login\n")</span>
+}
+func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        h.Logger.Printf("successfully entry userHandler.Register: [%s] %s\n",
+                r.Method, r.URL.Path)
+        body, err := ioutil.ReadAll(r.Body)
+        defer r.Body.Close()
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "can not read body")
+                return
+        }</span>
+        <span class="cov8" title="1">userJSON := new(UserJSON)
+        err = json.Unmarshal(body, &amp;userJSON)
+        if err != nil </span><span class="cov8" title="1">{
+                SendMessage(w, http.StatusBadRequest, "incorrect params")
+                return
+        }</span>
+        <span class="cov8" title="1">err = h.UserRepo.AddUser(userJSON.Username, userJSON.Password)
+        if err != nil </span><span class="cov8" title="1">{
+                SendMessage(w, http.StatusBadRequest, err.Error())
+                return
+        }</span>
+        <span class="cov8" title="1">u, err := h.UserRepo.Authorize(userJSON.Username, userJSON.Password)
+        if err != nil </span><span class="cov8" title="1">{
+                SendMessage(w, http.StatusBadRequest, err.Error())
+                return
+        }</span>
+        <span class="cov8" title="1">token, err := h.Sessions.Create(strconv.Itoa(int(u.ID)), u.Login)
+        if err != nil </span><span class="cov8" title="1">{
+                SendMessage(w, http.StatusInternalServerError, err.Error())
+                return
+        }</span>
+        <span class="cov8" title="1">w.WriteHeader(http.StatusCreated)
+        data, err := json.Marshal(map[string]interface{}{"token": token})
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "JSON Marshal error")
+                return
+        }</span>
+        <span class="cov8" title="1">_, err = w.Write(data)
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "Write error")
+                return
+        }</span>
+        <span class="cov8" title="1">h.Logger.Printf("successfully exit userHandler.Register\n")</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">// Code generated by MockGen. DO NOT EDIT.
+// Source: pkg/handlers/user.go
+
+// Package handlers is a generated GoMock package.
+package handlers
+
+import (
+        reflect "reflect"
+
+        gomock "github.com/golang/mock/gomock"
+        user "gitlab.com/vk-go/lectures-2022-2/06_databases/99_hw/redditclone/pkg/user"
+)
+
+// MockUserRepo is a mock of UserRepo interface.
+type MockUserRepo struct {
+        ctrl     *gomock.Controller
+        recorder *MockUserRepoMockRecorder
+}
+
+// MockUserRepoMockRecorder is the mock recorder for MockUserRepo.
+type MockUserRepoMockRecorder struct {
+        mock *MockUserRepo
+}
+
+// NewMockUserRepo creates a new mock instance.
+func NewMockUserRepo(ctrl *gomock.Controller) *MockUserRepo <span class="cov8" title="1">{
+        mock := &amp;MockUserRepo{ctrl: ctrl}
+        mock.recorder = &amp;MockUserRepoMockRecorder{mock}
+        return mock
+}</span>
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockUserRepo) EXPECT() *MockUserRepoMockRecorder <span class="cov8" title="1">{
+        return m.recorder
+}</span>
+
+// AddUser mocks base method.
+func (m *MockUserRepo) AddUser(login, pass string) error <span class="cov8" title="1">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "AddUser", login, pass)
+        ret0, _ := ret[0].(error)
+        return ret0
+}</span>
+
+// AddUser indicates an expected call of AddUser.
+func (mr *MockUserRepoMockRecorder) AddUser(login, pass interface{}) *gomock.Call <span class="cov8" title="1">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUser", reflect.TypeOf((*MockUserRepo)(nil).AddUser), login, pass)
+}</span>
+
+// Authorize mocks base method.
+func (m *MockUserRepo) Authorize(login, pass string) (*user.User, error) <span class="cov8" title="1">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "Authorize", login, pass)
+        ret0, _ := ret[0].(*user.User)
+        ret1, _ := ret[1].(error)
+        return ret0, ret1
+}</span>
+
+// Authorize indicates an expected call of Authorize.
+func (mr *MockUserRepoMockRecorder) Authorize(login, pass interface{}) *gomock.Call <span class="cov8" title="1">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Authorize", reflect.TypeOf((*MockUserRepo)(nil).Authorize), login, pass)
+}</span>
+
+// MockSessManager is a mock of SessManager interface.
+type MockSessManager struct {
+        ctrl     *gomock.Controller
+        recorder *MockSessManagerMockRecorder
+}
+
+// MockSessManagerMockRecorder is the mock recorder for MockSessManager.
+type MockSessManagerMockRecorder struct {
+        mock *MockSessManager
+}
+
+// NewMockSessManager creates a new mock instance.
+func NewMockSessManager(ctrl *gomock.Controller) *MockSessManager <span class="cov8" title="1">{
+        mock := &amp;MockSessManager{ctrl: ctrl}
+        mock.recorder = &amp;MockSessManagerMockRecorder{mock}
+        return mock
+}</span>
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockSessManager) EXPECT() *MockSessManagerMockRecorder <span class="cov8" title="1">{
+        return m.recorder
+}</span>
+
+// Check mocks base method.
+func (m *MockSessManager) Check(inToken string) (map[string]interface{}, error) <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "Check", inToken)
+        ret0, _ := ret[0].(map[string]interface{})
+        ret1, _ := ret[1].(error)
+        return ret0, ret1
+}</span>
+
+// Check indicates an expected call of Check.
+func (mr *MockSessManagerMockRecorder) Check(inToken interface{}) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Check", reflect.TypeOf((*MockSessManager)(nil).Check), inToken)
+}</span>
+
+// Create mocks base method.
+func (m *MockSessManager) Create(id, login string) (string, error) <span class="cov8" title="1">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "Create", id, login)
+        ret0, _ := ret[0].(string)
+        ret1, _ := ret[1].(error)
+        return ret0, ret1
+}</span>
+
+// Create indicates an expected call of Create.
+func (mr *MockSessManagerMockRecorder) Create(id, login interface{}) *gomock.Call <span class="cov8" title="1">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockSessManager)(nil).Create), id, login)
+}</span>
+</pre>
+		
+		<pre class="file" id="file5" style="display: block;">package handlers
+
+import (
+        "encoding/json"
+        "github.com/gorilla/mux"
+        "gitlab.com/vk-go/lectures-2022-2/06_databases/99_hw/redditclone/pkg/session"
+
+        "log"
+        "net/http"
+)
+
+type VoteHandler struct {
+        Logger   *log.Logger
+        PostRepo PostsRepo
+}
+
+func (h *VoteHandler) Upvote(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        h.Logger.Printf("successfully entry voteHandler.Upvote: [%s] %s\n",
+                r.Method, r.URL.Path)
+        vars := mux.Vars(r)
+        id, _ := session.SessionFromContext(r.Context())
+        post, err := h.PostRepo.Vote(1, id, vars["id"])
+        if err != nil </span><span class="cov8" title="1">{
+                SendMessage(w, http.StatusBadRequest, err.Error())
+                return
+        }</span>
+        <span class="cov8" title="1">data, err := json.Marshal(post)
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "JSON Marshal error")
+                return
+        }</span>
+        <span class="cov8" title="1">w.WriteHeader(http.StatusOK)
+        _, err = w.Write(data)
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "Write error")
+                return
+        }</span>
+        <span class="cov8" title="1">h.Logger.Printf("successfully exit voteHandler.Upvote\n")</span>
+}
+func (h *VoteHandler) Downvote(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        h.Logger.Printf("successfully entry voteHandler.Downvote: [%s] %s\n",
+                r.Method, r.URL.Path)
+        vars := mux.Vars(r)
+        id, _ := session.SessionFromContext(r.Context())
+        post, err := h.PostRepo.Vote(-1, id, vars["id"])
+        if err != nil </span><span class="cov8" title="1">{
+                SendMessage(w, http.StatusBadRequest, err.Error())
+                return
+        }</span>
+        <span class="cov8" title="1">data, err := json.Marshal(post)
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "JSON Marshal error")
+                return
+        }</span>
+        <span class="cov8" title="1">w.WriteHeader(http.StatusOK)
+        _, err = w.Write(data)
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "Write error")
+                return
+        }</span>
+        <span class="cov8" title="1">h.Logger.Printf("successfully exit voteHandler.Downvote\n")</span>
+}
+func (h *VoteHandler) Unvote(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        h.Logger.Printf("successfully entry voteHandler.Unvote: [%s] %s\n",
+                r.Method, r.URL.Path)
+        vars := mux.Vars(r)
+        id, _ := session.SessionFromContext(r.Context())
+        post, err := h.PostRepo.UnVote(id, vars["id"])
+        if err != nil </span><span class="cov8" title="1">{
+                SendMessage(w, http.StatusBadRequest, err.Error())
+                return
+        }</span>
+        <span class="cov8" title="1">data, err := json.Marshal(post)
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "JSON Marshal error")
+                return
+        }</span>
+        <span class="cov8" title="1">w.WriteHeader(http.StatusOK)
+        _, err = w.Write(data)
+        if err != nil </span><span class="cov0" title="0">{
+                SendMessage(w, http.StatusInternalServerError, "Write error")
+                return
+        }</span>
+        <span class="cov8" title="1">h.Logger.Printf("successfully exit voteHandler.Unvote\n")</span>
+}
+</pre>
+		
+		</div>
+	
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+
+</body></html>

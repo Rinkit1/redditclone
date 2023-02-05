@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<!-- saved from url=(0077)file:///C:/Users/bychk/AppData/Local/Temp/cover1710907928/coverage.html#file1 -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		
+		<title>post: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">my/redditclone/pkg/post/comment.go (100.0%)</option>
+				
+				<option value="file1">my/redditclone/pkg/post/repo.go (100.0%)</option>
+				
+				<option value="file2">my/redditclone/pkg/post/vote.go (100.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none;">package post
+
+import (
+        "strconv"
+        "time"
+)
+
+type Comment struct {
+        Author  Author `json:"author"`
+        Created string `json:"created"`
+        Body    string `json:"body"`
+        ID      string `json:"id"`
+}
+
+func (p *Post) NewComment(body, authorID, login string) <span class="cov8" title="1">{
+        p.lastCommentID++
+        p.Comment = append(p.Comment, &amp;Comment{
+                Created: time.Now().Format(time.RFC3339),
+                Author: Author{
+                        ID:       authorID,
+                        Username: login,
+                },
+                Body: body,
+                ID:   strconv.Itoa(p.lastCommentID),
+        })
+}</span>
+
+func (p *Post) DeleteComment(authorID, commentID string) error <span class="cov8" title="1">{
+        for ind, val := range p.Comment </span><span class="cov8" title="1">{
+                if val.ID == commentID </span><span class="cov8" title="1">{
+                        if val.Author.ID != authorID </span><span class="cov8" title="1">{
+                                return ErrNoAuthor
+                        }</span>
+                        <span class="cov8" title="1">p.Comment = append(p.Comment[:ind], p.Comment[ind+1:]...)
+                        return nil</span>
+                }
+        }
+        <span class="cov8" title="1">return ErrNoComment</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: block;">package post
+
+import (
+        "context"
+        "errors"
+        "go.mongodb.org/mongo-driver/bson"
+        i "my/redditclone/pkg/interface_mongoDB"
+        "strconv"
+        "time"
+)
+
+// WARNING! completly unsafe in multi-goroutine use, need add mutexes
+
+type PostsMongoRepository struct {
+        Posts i.PostInterface
+}
+
+var (
+        ErrNoAuthor  = errors.New("you are not author")
+        ErrNoComment = errors.New("no comment")
+        ErrFind      = errors.New("error with find in databases")
+        ErrCurDecode = errors.New("error with decode cursor")
+        ErrInsert    = errors.New("error with insert to mongodb")
+)
+
+func NewMemoryRepo(collection i.PostInterface) *PostsMongoRepository <span class="cov8" title="1">{
+        return &amp;PostsMongoRepository{Posts: collection}
+}</span>
+
+func (repo *PostsMongoRepository) GetAll() ([]*Post, error) <span class="cov8" title="1">{
+        return repo.FindPostsInMongoDB(bson.M{})
+}</span>
+
+func (repo *PostsMongoRepository) FindPostsInMongoDB(bson interface{}) (posts []*Post, err error) <span class="cov8" title="1">{
+        ctx := context.Background()
+        cur, err := repo.Posts.Find(ctx, bson)
+        defer cur.Close(ctx)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, ErrFind
+        }</span>
+        <span class="cov8" title="1">for cur.Next(ctx) </span><span class="cov8" title="1">{
+                var post Post
+                err = cur.Decode(&amp;post)
+                if err != nil </span><span class="cov8" title="1">{
+                        return nil, ErrCurDecode
+                }</span>
+                <span class="cov8" title="1">posts = append(posts, &amp;post)
+                err = cur.Err()
+                if err != nil </span><span class="cov8" title="1">{
+                        return nil, err
+                }</span>
+        }
+        <span class="cov8" title="1">return posts, nil</span>
+}
+
+func (repo *PostsMongoRepository) AddPost(postJSON *Post, id, login string) error <span class="cov8" title="1">{
+        posts, err := repo.FindPostsInMongoDB(bson.M{})
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+        <span class="cov8" title="1">max := -1
+        for _, val := range posts </span><span class="cov8" title="1">{
+                var temp int
+                temp, err = strconv.Atoi(val.ID)
+                if err != nil </span><span class="cov8" title="1">{
+                        return err
+                }</span>
+                <span class="cov8" title="1">if temp &gt; max </span><span class="cov8" title="1">{
+                        max = temp
+                }</span>
+        }
+        <span class="cov8" title="1">postJSON.NewVote(1, id)
+        postJSON.ID = strconv.Itoa(max + 1)
+        postJSON.Created = time.Now().Format(time.RFC3339)
+        postJSON.Views = 0
+        postJSON.Author = Author{
+                ID:       id,
+                Username: login,
+        }
+        _, err = repo.Posts.InsertOne(context.TODO(), postJSON)
+        if err != nil </span><span class="cov8" title="1">{
+                return ErrInsert
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (repo *PostsMongoRepository) OpenPost(id string) (*Post, error) <span class="cov8" title="1">{
+        posts, err := repo.FindPostsInMongoDB(bson.M{"id": id})
+        if err != nil || len(posts) == 0 </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">return posts[0], err</span>
+}
+
+func (repo *PostsMongoRepository) Category(name string) ([]*Post, error) <span class="cov8" title="1">{
+        return repo.FindPostsInMongoDB(bson.M{"category": name})
+}</span>
+
+func (repo *PostsMongoRepository) User(name string) ([]*Post, error) <span class="cov8" title="1">{
+        return repo.FindPostsInMongoDB(bson.M{"author.username": name})
+}</span>
+
+func (repo *PostsMongoRepository) Delete(postID string, authorID string) (err error) <span class="cov8" title="1">{
+        posts, err := repo.FindPostsInMongoDB(bson.M{"id": postID})
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+        <span class="cov8" title="1">if posts[0].Author.ID != authorID </span><span class="cov8" title="1">{
+                return ErrNoAuthor
+        }</span>
+        <span class="cov8" title="1">_, err = repo.Posts.DeleteOne(context.TODO(), bson.M{"id": postID})
+        return err</span>
+}
+
+func (repo *PostsMongoRepository) Vote(vote int, authorID string, postID string) (*Post, error) <span class="cov8" title="1">{
+
+        post, err := repo.OpenPost(postID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">post.NewVote(vote, authorID)
+
+        _, err = repo.Posts.ReplaceOne(context.TODO(), bson.M{"id": postID}, post)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">return post, nil</span>
+}
+
+func (repo *PostsMongoRepository) UnVote(authorID string, postID string) (*Post, error) <span class="cov8" title="1">{
+        post, err := repo.OpenPost(postID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">post.DeleteVote(authorID)
+
+        _, err = repo.Posts.ReplaceOne(context.TODO(), bson.M{"id": postID}, post)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">return post, nil</span>
+}
+
+func (repo *PostsMongoRepository) AddComment(postID, body, authorID, login string) (*Post, error) <span class="cov8" title="1">{
+        post, err := repo.OpenPost(postID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">post.NewComment(body, authorID, login)
+
+        _, err = repo.Posts.ReplaceOne(context.TODO(), bson.M{"id": postID}, post)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">return post, nil</span>
+}
+
+func (repo *PostsMongoRepository) DeleteComment(postID, commentID, authorID string) (*Post, error) <span class="cov8" title="1">{
+        post, err := repo.OpenPost(postID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">err = post.DeleteComment(authorID, commentID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">_, err = repo.Posts.ReplaceOne(context.TODO(), bson.M{"id": postID}, post)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">return post, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package post
+
+type Vote struct {
+        UserID string `json:"user"`
+        Votes  int    `json:"vote"`
+}
+
+func (p *Post) NewVote(vote int, id string) <span class="cov8" title="1">{
+        p.DeleteVote(id)
+        p.Vote = append(p.Vote, &amp;Vote{
+                Votes:  vote,
+                UserID: id,
+        })
+        p.Score += vote
+        p.UpvotePercentage = 100 * (p.Score + len(p.Vote)) / (2 * len(p.Vote))
+}</span>
+
+func (p *Post) DeleteVote(id string) <span class="cov8" title="1">{
+        for ind, val := range p.Vote </span><span class="cov8" title="1">{
+                if val.UserID == id </span><span class="cov8" title="1">{
+                        p.Score -= val.Votes
+                        if len(p.Vote) == 1 </span><span class="cov8" title="1">{
+                                p.UpvotePercentage = 0
+                        }</span> else<span class="cov8" title="1"> {
+                                p.UpvotePercentage = (p.Score + len(p.Vote) - 1) / 2 / (len(p.Vote) - 1) * 100
+                        }</span>
+                        <span class="cov8" title="1">p.Vote = append(p.Vote[:ind], p.Vote[ind+1:]...)
+                        break</span>
+                }
+        }
+}
+</pre>
+		
+		</div>
+	
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+
+</body></html>
